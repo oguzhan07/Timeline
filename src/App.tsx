@@ -72,6 +72,16 @@ function App() {
     setViewMode('month');
   }, [setCurrentDate, setViewMode]);
 
+  const handleRangeSelect = useCallback((startDate: Date, endDate: Date) => {
+    setModal({
+      mode: 'task',
+      defaultStartDate: startDate,
+      defaultEndDate: endDate,
+      defaultStartHour: 9,
+      defaultEndHour: 10,
+    });
+  }, []);
+
   const PAGES: { key: Page; label: string; icon: string }[] = [
     { key: 'calendar', label: 'Takvim', icon: '📅' },
     { key: 'tasks', label: 'Gorevler', icon: '✅' },
@@ -102,8 +112,8 @@ function App() {
             {(viewMode === 'day' || viewMode === 'week') && (
               <TimelineGrid onSelectionComplete={handleSelectionComplete} onTaskClick={handleTaskClick} />
             )}
-            {viewMode === 'month' && <MonthView onDayClick={handleDayClick} />}
-            {viewMode === 'year' && <YearView onMonthClick={handleMonthClick} />}
+            {viewMode === 'month' && <MonthView onDayClick={handleDayClick} onRangeSelect={handleRangeSelect} />}
+            {viewMode === 'year' && <YearView onMonthClick={handleMonthClick} onRangeSelect={handleRangeSelect} />}
           </>
         )}
         {page === 'tasks' && <TaskList onTaskClick={handleTaskClick} />}
