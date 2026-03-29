@@ -22,32 +22,30 @@ export default function YearView({ onMonthClick, onRangeSelect }: Props) {
   const tasks = useTaskStore(s => s.tasks);
   const year = currentDate.getFullYear();
 
-  // Drag state: tracks which month card and which day indices
-  const [selection, setSelection] = useState<{ monthIdx: number; startIdx: number; endIdx: number } | null>(null);
+  // Drag state: track actual dates for cross-month selection
+  const [selection, setSelection] = useState<{ startDate: Date; endDate: Date } | null>(null);
   const isDragging = useRef(false);
+  const didDrag = useRef(false);
 
-  const selBounds = useMemo(() => {
+  const selRange = useMemo(() => {
     if (!selection) return null;
-    return {
-      monthIdx: selection.monthIdx,
-      min: Math.min(selection.startIdx, selection.endIdx),
-      max: Math.max(selection.startIdx, selection.endIdx),
-    };
+    const s = selection.startDate.getTime();
+    const e = selection.endDate.getTime();
+    return { min: Math.min(s, e), max: Math.max(s, e) };
   }, [selection]);
 
-  const handleDayMouseDown = useCallback((monthIdx: number, dayIdx: number, e: React.MouseEvent) => {
+  const handleDayMouseDown = useCallback((day: Date, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     isDragging.current = true;
-    setSelection({ monthIdx, startIdx: dayIdx, endIdx: dayIdx });
+    didDrag.current = false;
+    setSelection({ startDate: day, endDate: day });
   }, []);
 
-  const handleDayMouseEnter = useCallback((monthIdx: number, dayIdx: number) => {
+  const handleDayMouseEnter = useCallback((day: Date) => {
     if (!isDragging.current) return;
-    setSelection(prev => {
-      if (!prev || prev.monthIdx !== monthIdx) return prev;
-      return { ...prev, endIdx: dayIdx };
-    });
+    didDrag.current = true;
+    setSelection(prev => prev ? { ...prev, endDate: day } : prev);
   }, []);
 
   const months = useMemo(() => {
@@ -67,7 +65,7 @@ export default function YearView({ onMonthClick, onRangeSelect }: Props) {
         taskDays.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
       });
 
-      return { month: m, name: format(monthDate, 'MMMM', { locale: tr }), days, taskDays, monthDate };
+      return { month: m, name: format(monthDate, 'MMMM', { locale: tr }), days, taskDays };
     });
   }, [year, tasks]);
 
@@ -79,25 +77,26 @@ export default function YearView({ onMonthClick, onRangeSelect }: Props) {
     }
     isDragging.current = false;
 
-    const month = months[selection.monthIdx];
-    const minIdx = Math.min(selection.startIdx, selection.endIdx);
-    const maxIdx = Math.max(selection.startIdx, selection.endIdx);
+    const s = selection.startDate.getTime();
+    const e = selection.endDate.getTime();
+    const startDate = s <= e ? selection.startDate : selection.endDate;
+    const endDate = s <= e ? selection.endDate : selection.startDate;
 
-    if (minIdx === maxIdx) {
-      // Tek gün — o gün için görev oluştur
-      onRangeSelect(month.days[minIdx], month.days[minIdx]);
-    } else {
-      onRangeSelect(month.days[minIdx], month.days[maxIdx]);
-    }
+    onRangeSelect(startDate, endDate);
     setSelection(null);
-  }, [selection, months, onRangeSelect]);
+  }, [selection, onRangeSelect]);
 
   const handleCardClick = useCallback((month: number) => {
-    // Sadece drag yapılmadıysa ay görünümüne geç
-    if (!isDragging.current && !selection) {
+    if (!didDrag.current) {
       onMonthClick(month);
     }
-  }, [onMonthClick, selection]);
+  }, [onMonthClick]);
+
+  const isDaySelected = (day: Date) => {
+    if (!selRange) return false;
+    const t = day.getTime();
+    return t >= selRange.min && t <= selRange.max;
+  };
 
   return (
     <div
@@ -121,14 +120,14 @@ export default function YearView({ onMonthClick, onRangeSelect }: Props) {
                 const key = `${day.getFullYear()}-${day.getMonth()}-${day.getDate()}`;
                 const hasTasks = taskDays.has(key);
                 const inMonth = day.getMonth() === month;
-                const isSelected = selBounds && selBounds.monthIdx === month && i >= selBounds.min && i <= selBounds.max;
+                const selected = inMonth && isDaySelected(day);
                 return (
                   <div
                     key={i}
-                    className={`year-mini-day ${hasTasks ? 'has-tasks' : ''} ${isToday(day) ? 'today' : ''} ${isSelected ? 'selected' : ''}`}
+                    className={`year-mini-day ${hasTasks ? 'has-tasks' : ''} ${isToday(day) ? 'today' : ''} ${selected ? 'selected' : ''}`}
                     style={{ opacity: inMonth ? 1 : 0.2, cursor: inMonth ? 'pointer' : 'default' }}
-                    onMouseDown={(e) => inMonth && handleDayMouseDown(month, i, e)}
-                    onMouseEnter={() => inMonth && handleDayMouseEnter(month, i)}
+                    onMouseDown={(e) => inMonth && handleDayMouseDown(day, e)}
+                    onMouseEnter={() => inMonth && handleDayMouseEnter(day)}
                   >
                     {format(day, 'd')}
                   </div>
