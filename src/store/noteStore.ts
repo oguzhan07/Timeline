@@ -8,10 +8,7 @@ function getLocalNotes(): Note[] {
 function setLocalNotes(notes: Note[]) {
   localStorage.setItem('tl_notes', JSON.stringify(notes));
 }
-const useFirebase = () => {
-  const key = import.meta.env.VITE_FIREBASE_API_KEY;
-  return !!key && key !== '';
-};
+const useFirebase = () => true;
 
 interface NoteState {
   notes: Note[];

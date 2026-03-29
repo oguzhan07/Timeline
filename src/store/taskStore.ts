@@ -27,10 +27,7 @@ function setLocalTasks(tasks: Task[]) {
   localStorage.setItem('tl_tasks', JSON.stringify(tasks));
 }
 
-const useFirebase = () => {
-  const key = import.meta.env.VITE_FIREBASE_API_KEY;
-  return !!key && key !== '';
-};
+const useFirebase = () => true;
 
 interface TaskState {
   tasks: Task[];
