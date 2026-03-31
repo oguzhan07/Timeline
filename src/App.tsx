@@ -20,6 +20,7 @@ function App() {
   const loadNotes = useNoteStore(s => s.loadNotes);
 
   const [page, setPage] = useState<Page>('calendar');
+  const [fabOpen, setFabOpen] = useState(false);
 
   // Modal state
   const [modal, setModal] = useState<{
@@ -125,13 +126,30 @@ function App() {
 
       {/* FAB */}
       {(page === 'calendar' || page === 'tasks' || page === 'notes') && (
-        <button
-          className="fab"
-          onClick={() => setModal({ mode: page === 'notes' ? 'note' : 'task' })}
-        >
-          +
-        </button>
+        <div className="fab-container">
+          {fabOpen && (
+            <div className="fab-menu">
+              <button className="fab-menu-item" onClick={() => { setFabOpen(false); setModal({ mode: 'task' }); }}>
+                <span>✅</span> Gorev Ekle
+              </button>
+              <button className="fab-menu-item" onClick={() => { setFabOpen(false); setModal({ mode: 'note' }); }}>
+                <span>📝</span> Not Ekle
+              </button>
+            </div>
+          )}
+          <button
+            className={`fab ${fabOpen ? 'fab-open' : ''}`}
+            onClick={() => {
+              if (page === 'notes') { setModal({ mode: 'note' }); }
+              else if (page === 'tasks') { setModal({ mode: 'task' }); }
+              else { setFabOpen(!fabOpen); }
+            }}
+          >
+            +
+          </button>
+        </div>
       )}
+      {fabOpen && <div className="fab-backdrop" onClick={() => setFabOpen(false)} />}
 
       {/* Modal */}
       {modal && (

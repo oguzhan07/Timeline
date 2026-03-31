@@ -105,14 +105,11 @@ export default function MonthView({ onDayClick, onRangeSelect }: Props) {
               onMouseEnter={() => handleMouseEnter(i)}
             >
               <div className="month-day-num">{format(day, 'd')}</div>
-              {dayTasks.slice(0, 3).map(t => (
+              {dayTasks.map(t => (
                 <div key={t.id} className="month-day-task" style={{ backgroundColor: t.color }}>
                   {t.title}
                 </div>
               ))}
-              {dayTasks.length > 3 && (
-                <div className="month-day-more">+{dayTasks.length - 3} daha</div>
-              )}
             </div>
           );
         })}

@@ -6,9 +6,11 @@ interface Props {
   task: Task;
   dayStart: number;
   onClick: (task: Task) => void;
+  colIndex?: number;
+  totalCols?: number;
 }
 
-export default function TaskBlock({ task, dayStart, onClick }: Props) {
+export default function TaskBlock({ task, dayStart, onClick, colIndex = 0, totalCols = 1 }: Props) {
   const startMin = Math.max(0, (task.startTime - dayStart) / 60000);
   const endMin = Math.min(24 * 60, (task.endTime - dayStart) / 60000);
   const top = (startMin / 60) * 60;
@@ -16,6 +18,9 @@ export default function TaskBlock({ task, dayStart, onClick }: Props) {
 
   const bg = hexToRgba(task.color, 0.25);
   const textColor = getContrastColor(task.color) === '#FFF' ? '#fff' : task.color;
+
+  const widthPct = 100 / totalCols;
+  const leftPct = colIndex * widthPct;
 
   return (
     <div
@@ -26,6 +31,8 @@ export default function TaskBlock({ task, dayStart, onClick }: Props) {
         backgroundColor: bg,
         borderLeftColor: task.color,
         color: textColor,
+        left: `${leftPct}%`,
+        width: `calc(${widthPct}% - 4px)`,
       }}
       onClick={(e) => { e.stopPropagation(); onClick(task); }}
     >

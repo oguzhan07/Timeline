@@ -83,6 +83,50 @@ export default function TimelineGrid({ onSelectionComplete, onTaskClick }: Props
     return filteredTasks.filter(t => t.startTime < de && t.endTime > ds);
   };
 
+  // Compute column layout for overlapping tasks
+  const computeColumns = (tasks: Task[]): { task: Task; col: number; totalCols: number }[] => {
+    if (tasks.length === 0) return [];
+    const sorted = [...tasks].sort((a, b) => a.startTime - b.startTime || a.endTime - b.endTime);
+    const cols: { task: Task; col: number; group: number }[] = [];
+    const groups: { end: number; maxCol: number; members: number[] }[] = [];
+
+    for (const task of sorted) {
+      // Find a column where this task doesn't overlap
+      const endTimes: number[] = [];
+      for (const placed of cols) {
+        if (!endTimes[placed.col] || endTimes[placed.col] <= placed.task.endTime) {
+          endTimes[placed.col] = placed.task.endTime;
+        }
+      }
+      let col = 0;
+      while (endTimes[col] && endTimes[col] > task.startTime) col++;
+
+      // Find which group this task belongs to (overlaps with any member)
+      let groupIdx = -1;
+      for (let g = 0; g < groups.length; g++) {
+        if (task.startTime < groups[g].end) {
+          groupIdx = g;
+          break;
+        }
+      }
+      if (groupIdx === -1) {
+        groupIdx = groups.length;
+        groups.push({ end: task.endTime, maxCol: col, members: [] });
+      } else {
+        groups[groupIdx].end = Math.max(groups[groupIdx].end, task.endTime);
+        groups[groupIdx].maxCol = Math.max(groups[groupIdx].maxCol, col);
+      }
+      groups[groupIdx].members.push(cols.length);
+      cols.push({ task, col, group: groupIdx });
+    }
+
+    return cols.map(c => ({
+      task: c.task,
+      col: c.col,
+      totalCols: groups[c.group].maxCol + 1,
+    }));
+  };
+
   const isCellSelected = (dayIdx: number, hour: number) => {
     if (!selBounds) return false;
     return dayIdx >= selBounds.minDay && dayIdx <= selBounds.maxDay
@@ -127,12 +171,13 @@ export default function TimelineGrid({ onSelectionComplete, onTaskClick }: Props
           {days.map((day, dayIdx) => {
             const dayStart = startOfDay(day).getTime();
             const dayTasks = getTasksForDay(day);
+            const layouted = computeColumns(dayTasks);
 
             return (
               <div key={dayIdx} className="timeline-day-col">
                 {isToday(day) && <CurrentTimeLine />}
-                {dayTasks.map(task => (
-                  <TaskBlock key={task.id} task={task} dayStart={dayStart} onClick={onTaskClick} />
+                {layouted.map(({ task, col, totalCols }) => (
+                  <TaskBlock key={task.id} task={task} dayStart={dayStart} onClick={onTaskClick} colIndex={col} totalCols={totalCols} />
                 ))}
                 {HOURS.map(h => (
                   <div

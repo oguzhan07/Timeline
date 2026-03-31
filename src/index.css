@@ -267,7 +267,6 @@ a { color: var(--accent); text-decoration: none; }
 /* ===== Task Block ===== */
 .task-block {
   position: absolute;
-  left: 2px; right: 2px;
   border-radius: var(--radius-sm);
   padding: 3px 6px;
   font-size: 11px;
@@ -295,6 +294,7 @@ a { color: var(--accent); text-decoration: none; }
 .month-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: minmax(100px, auto);
   gap: 1px;
   background: var(--border);
   border-radius: var(--radius);
@@ -310,7 +310,6 @@ a { color: var(--accent); text-decoration: none; }
   text-transform: uppercase;
 }
 .month-day {
-  min-height: 100px;
   padding: 6px;
   background: var(--bg-primary);
   cursor: pointer;
@@ -699,10 +698,22 @@ a { color: var(--accent); text-decoration: none; }
 .btn-danger:hover { background: var(--danger-hover); }
 
 /* ===== FAB ===== */
-.fab {
+.fab-container {
   position: fixed;
   bottom: 24px;
   right: 24px;
+  z-index: 51;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+.fab-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 49;
+}
+.fab {
   width: 52px; height: 52px;
   border-radius: 50%;
   background: var(--accent);
@@ -710,10 +721,31 @@ a { color: var(--accent); text-decoration: none; }
   display: flex; align-items: center; justify-content: center;
   font-size: 28px;
   box-shadow: 0 4px 16px rgba(124, 92, 252, 0.4);
-  z-index: 50;
   transition: all var(--transition);
 }
 .fab:hover { background: var(--accent-hover); transform: scale(1.08); }
+.fab.fab-open { transform: rotate(45deg); }
+.fab-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  animation: fadeIn 0.15s ease;
+}
+.fab-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  box-shadow: var(--shadow);
+  transition: background var(--transition);
+}
+.fab-menu-item:hover { background: var(--bg-hover); }
 
 /* ===== Empty State ===== */
 .empty-state {
@@ -741,6 +773,6 @@ a { color: var(--accent); text-decoration: none; }
   .header-title { font-size: 13px; min-width: 120px; }
   .view-tab { padding: 4px 8px; font-size: 12px; }
   .year-grid { grid-template-columns: repeat(2, 1fr); }
-  .month-day { min-height: 70px; }
+  .month-day { min-height: 60px; }
   .form-row { flex-direction: column; gap: 0; }
 }

@@ -61,8 +61,15 @@ export default function YearView({ onMonthClick, onRangeSelect }: Props) {
       const ms = monthStart.getTime();
       const me = monthEnd.getTime() + 86400000;
       tasks.filter(t => t.startTime < me && t.endTime > ms).forEach(t => {
-        const d = new Date(t.startTime);
-        taskDays.add(`${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`);
+        // Mark every day the task spans, not just the start day
+        const tStart = Math.max(t.startTime, ms);
+        const tEnd = Math.min(t.endTime, me);
+        let cur = new Date(tStart);
+        cur.setHours(0, 0, 0, 0);
+        while (cur.getTime() < tEnd) {
+          taskDays.add(`${cur.getFullYear()}-${cur.getMonth()}-${cur.getDate()}`);
+          cur = new Date(cur.getTime() + 86400000);
+        }
       });
 
       return { month: m, name: format(monthDate, 'MMMM', { locale: tr }), days, taskDays };
