@@ -23,7 +23,9 @@ export default function TimelineGrid({ onSelectionComplete, onTaskClick }: Props
   const { viewMode, currentDate } = useSettingsStore();
   const showCompleted = useSettingsStore(s => s.showCompletedTasks);
   const allTasks = useTaskStore(s => s.tasks);
+  const updateTask = useTaskStore(s => s.updateTask);
   const filteredTasks = showCompleted ? allTasks : allTasks.filter(t => !t.isCompleted);
+  const [dropTarget, setDropTarget] = useState<{ dayIdx: number; hour: number } | null>(null);
 
   const days = useMemo(() => {
     if (viewMode === 'day') return [currentDate];
@@ -133,6 +135,30 @@ export default function TimelineGrid({ onSelectionComplete, onTaskClick }: Props
       && hour >= selBounds.minHour && hour <= selBounds.maxHour;
   };
 
+  const handleDragOver = useCallback((e: React.DragEvent, dayIdx: number, hour: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDropTarget({ dayIdx, hour });
+  }, []);
+
+  const handleDragLeave = useCallback(() => {
+    setDropTarget(null);
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, dayIdx: number, hour: number) => {
+    e.preventDefault();
+    setDropTarget(null);
+    const taskId = e.dataTransfer.getData('taskId');
+    const duration = parseInt(e.dataTransfer.getData('taskDuration'), 10);
+    if (!taskId || isNaN(duration)) return;
+
+    const targetDay = days[dayIdx];
+    const newStart = startOfDay(targetDay).getTime() + hour * 3600000;
+    const newEnd = newStart + duration;
+
+    updateTask(taskId, { startTime: newStart, endTime: newEnd });
+  }, [days, updateTask]);
+
   return (
     <div
       className="timeline-wrapper"
@@ -182,9 +208,12 @@ export default function TimelineGrid({ onSelectionComplete, onTaskClick }: Props
                 {HOURS.map(h => (
                   <div
                     key={h}
-                    className={`timeline-cell ${isCellSelected(dayIdx, h) ? 'selecting' : ''}`}
+                    className={`timeline-cell ${isCellSelected(dayIdx, h) ? 'selecting' : ''} ${dropTarget?.dayIdx === dayIdx && dropTarget?.hour === h ? 'drop-target' : ''}`}
                     onMouseDown={(e) => { e.preventDefault(); handleMouseDown(dayIdx, h); }}
                     onMouseEnter={() => handleMouseEnter(dayIdx, h)}
+                    onDragOver={(e) => handleDragOver(e, dayIdx, h)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, dayIdx, h)}
                   />
                 ))}
               </div>

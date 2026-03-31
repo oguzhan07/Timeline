@@ -22,9 +22,23 @@ export default function TaskBlock({ task, dayStart, onClick, colIndex = 0, total
   const widthPct = 100 / totalCols;
   const leftPct = colIndex * widthPct;
 
+  const handleDragStart = (e: React.DragEvent) => {
+    e.dataTransfer.setData('taskId', task.id);
+    e.dataTransfer.setData('taskDuration', String(task.endTime - task.startTime));
+    e.dataTransfer.effectAllowed = 'move';
+    (e.currentTarget as HTMLElement).style.opacity = '0.4';
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    (e.currentTarget as HTMLElement).style.opacity = '1';
+  };
+
   return (
     <div
       className={`task-block ${task.isCompleted ? 'completed' : ''}`}
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
       style={{
         top: `${top}px`,
         height: `${height}px`,
